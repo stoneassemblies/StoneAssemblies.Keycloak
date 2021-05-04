@@ -81,11 +81,22 @@ Task("Build")
   .IsDependentOn("Restore")
   .Does(() => 
 	{
+        EnsureDirectoryExists("target");
+        CleanDirectory("target");
+        
+        EnsureDirectoryExists("output");
+        CleanDirectory("output");
+
+        EnsureDirectoryExists("output/jar");
+        CleanDirectory("output/jar");
+
 	      StartProcess("mvn", new ProcessSettings
 	      {
 	          Arguments = new ProcessArgumentBuilder()
 	          .Append("package")
 	      });
+
+	      CopyFiles("target/*.jar", "output/jar");
 	}); 
 
 Task("Pack")
