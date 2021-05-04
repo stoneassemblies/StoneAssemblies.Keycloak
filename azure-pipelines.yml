@@ -18,13 +18,14 @@ steps:
 
 - script: dotnet cake --target=Build
   displayName: 'Build
-- task: PublishBuildArtifacts@1
+
+- task: PublishBuildArtifacts@1
   displayName: 'Publish Artifacts'
   inputs:
     PathtoPublish: './output/jar'
     ArtifactName: 'stoneassemblies-keycloak'
-    publishLocation: 'Container''
-  
+    publishLocation: 'Container'
+
 # - task: Maven@3
 #  displayName: 'Maven Package'
 #  inputs:
