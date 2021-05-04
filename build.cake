@@ -69,11 +69,11 @@ Task("UpdateVersion")
 Task("Restore")
   .Does(() => 
 	{
-      StartProcess("mvn.cmd", new ProcessSettings
-      {
-          Arguments = new ProcessArgumentBuilder()
-          .Append("dependency:resolve")
-      });
+	      StartProcess("mvn", new ProcessSettings
+	      {
+	          Arguments = new ProcessArgumentBuilder()
+	          .Append("dependency:resolve")
+	      });
 	});
 
 Task("Build")
@@ -81,11 +81,11 @@ Task("Build")
   .IsDependentOn("Restore")
   .Does(() => 
 	{
-      StartProcess("mvn.cmd", new ProcessSettings
-      {
-          Arguments = new ProcessArgumentBuilder()
-          .Append("package")
-      });
+	      StartProcess("mvn", new ProcessSettings
+	      {
+	          Arguments = new ProcessArgumentBuilder()
+	          .Append("package")
+	      });
 	}); 
 
 Task("Pack")
