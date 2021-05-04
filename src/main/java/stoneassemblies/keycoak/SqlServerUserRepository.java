@@ -10,6 +10,8 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,7 @@ public class SqlServerUserRepository implements UserRepository {
     private final String updateCredentialsCommand;
     private final String authenticationQueryOrStoredProcedureName;
 
+
     public SqlServerUserRepository(String connectionString, String usersQuery, String updateCredentialsCommand,
                                    String authenticationQueryOrStoredProcedureName, String authenticationQueryType) {
         this.connectionString = connectionString;
@@ -34,14 +37,40 @@ public class SqlServerUserRepository implements UserRepository {
         this.authenticationQueryType = authenticationQueryType;
     }
 
+    public static User mapRow(ResultSet resultSet, int i) throws SQLException {
+        User user = new User();
 
+        user.setId(resultSet.getString("Id"));
+        user.setUsername(resultSet.getString("UserName"));
+        user.setEmail(resultSet.getString("Email"));
+
+        // Optional columns.
+        try {
+            user.setFirstName(resultSet.getString("FirstName"));
+        } catch (SQLException exception) {
+        }
+
+        try {
+            user.setLastName(resultSet.getString("LastName"));
+        } catch (SQLException exception) {
+        }
+
+        try {
+            user.setPassword(resultSet.getString("Password"));
+        } catch (SQLException exception) {
+        }
+
+        user.setEnabled(true);
+        user.setCreated(System.currentTimeMillis());
+        return user;
+    }
 
 
     @Override
     public List<User> getAllUsers() {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            return jdbcTemplate.query(usersQuery, UserRepository::mapRow);
+            return jdbcTemplate.query(usersQuery, SqlServerUserRepository::mapRow);
         } catch (DataAccessException e) {
             e.printStackTrace();
         }
@@ -67,7 +96,7 @@ public class SqlServerUserRepository implements UserRepository {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
             return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE Id=?", usersQuery),
-                    UserRepository::mapRow, new Object[]{id});
+                    SqlServerUserRepository::mapRow, new Object[]{id});
         } catch (DataAccessException e) {
             e.printStackTrace();
         }
@@ -80,7 +109,7 @@ public class SqlServerUserRepository implements UserRepository {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
             return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE UserName=? OR Email=?", usersQuery),
-                    UserRepository::mapRow, new Object[]{username, username});
+                    SqlServerUserRepository::mapRow, new Object[]{username, username});
         } catch (DataAccessException e) {
             e.printStackTrace();
         }
@@ -144,7 +173,7 @@ public class SqlServerUserRepository implements UserRepository {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
             return jdbcTemplate.query(String.format("SELECT * FROM (%s) T ORDER BY Id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", usersQuery),
-                    UserRepository::mapRow, new Object[]{new Integer(offset), new Integer(take)});
+                    SqlServerUserRepository::mapRow, new Object[]{new Integer(offset), new Integer(take)});
         } catch (DataAccessException e) {
             e.printStackTrace();
         }
@@ -159,7 +188,7 @@ public class SqlServerUserRepository implements UserRepository {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
             String searchPattern = String.format("%%%s%%", search);
             return jdbcTemplate.query(String.format("SELECT TOP 0 * FROM (%s) T WHERE UserName LIKE ? OR Email LIKE ? OR FirstName LIKE ? OR LastName LIKE ?", usersQuery),
-                    UserRepository::mapRow, new Object[]{searchPattern, searchPattern, searchPattern, searchPattern});
+                    SqlServerUserRepository::mapRow, new Object[]{searchPattern, searchPattern, searchPattern, searchPattern});
         } catch (DataAccessException e) {
             e.printStackTrace();
         }
@@ -187,7 +216,7 @@ public class SqlServerUserRepository implements UserRepository {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
             String searchPattern = String.format("%%%s%%", search);
             return jdbcTemplate.query(String.format("SELECT * FROM (%s) T WHERE UserName LIKE ? OR Email LIKE ? OR FirstName LIKE ? OR LastName LIKE ? ORDER BY Id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", usersQuery),
-                    UserRepository::mapRow, new Object[]{searchPattern, searchPattern, searchPattern, searchPattern, new Integer(offset), new Integer(fetch)});
+                    SqlServerUserRepository::mapRow, new Object[]{searchPattern, searchPattern, searchPattern, searchPattern, new Integer(offset), new Integer(fetch)});
         } catch (DataAccessException e) {
             e.printStackTrace();
         }

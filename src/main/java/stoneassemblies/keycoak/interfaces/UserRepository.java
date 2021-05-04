@@ -7,33 +7,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 public interface UserRepository {
-    static User mapRow(ResultSet resultSet, int i) throws SQLException {
-        User user = new User();
-
-        user.setId(resultSet.getString("Id"));
-        user.setUsername(resultSet.getString("UserName"));
-        user.setEmail(resultSet.getString("Email"));
-
-        // Optional columns.
-        try {
-            user.setFirstName(resultSet.getString("FirstName"));
-        } catch (SQLException exception) {
-        }
-
-        try {
-            user.setLastName(resultSet.getString("LastName"));
-        } catch (SQLException exception) {
-        }
-
-        try {
-            user.setPassword(resultSet.getString("Password"));
-        } catch (SQLException exception) {
-        }
-
-        user.setEnabled(true);
-        user.setCreated(System.currentTimeMillis());
-        return user;
-    }
 
     List<User> getAllUsers();
 
