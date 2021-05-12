@@ -113,7 +113,7 @@ Task("Publish")
         Arguments = new ProcessArgumentBuilder()
           .Append("deploy:deploy-file")
           .Append($"-Durl={mavenRepositoryUrl}")
-          .Append($"-DrepositoryId={repositoryName}")
+          .Append($"-DrepositoryId={mavenRepositoryName}")
           .Append($"-Dfile={jarFileName}")
       });
   });
