@@ -17,13 +17,16 @@ steps:
   displayName: 'GitVersion'
 
 - script: dotnet cake --target=Build
-  displayName: 'Build
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish Artifacts'
-  inputs:
-    PathtoPublish: './output/jar'
-    ArtifactName: 'stoneassemblies-keycloak'
-    publishLocation: 'Container''
+  displayName: 'Build'
+
+- script: dotnet cake --target=Publish
+  displayName: 'Publish'
+# - task: PublishBuildArtifacts@1
+#  displayName: 'Publish Artifacts'
+#  inputs:
+#    PathtoPublish: './output/jar'
+#    ArtifactName: 'stoneassemblies-keycloak'
+#    publishLocation: 'Container'
   
 # - task: Maven@3
 #  displayName: 'Maven Package'

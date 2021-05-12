@@ -81,23 +81,42 @@ Task("Build")
   .IsDependentOn("Restore")
   .Does(() => 
 	{
-        EnsureDirectoryExists("target");
-        CleanDirectory("target");
-        
-        EnsureDirectoryExists("output");
-        CleanDirectory("output");
+		EnsureDirectoryExists("target");
+		CleanDirectory("target");
+		
+		EnsureDirectoryExists("output");
+		CleanDirectory("output");
+		
+		EnsureDirectoryExists("output/jar");
+		CleanDirectory("output/jar");
 
-        EnsureDirectoryExists("output/jar");
-        CleanDirectory("output/jar");
+		StartProcess("mvn", new ProcessSettings
+		{
+		  Arguments = new ProcessArgumentBuilder()
+		    .Append("package")
+		});
 
-	      StartProcess("mvn", new ProcessSettings
-	      {
-	          Arguments = new ProcessArgumentBuilder()
-	          .Append("package")
-	      });
-
-	      CopyFiles("target/*.jar", "output/jar");
+		CopyFiles("target/*.jar", "output/jar");
 	}); 
+
+Task("Publish")
+  .IsDependentOn("Build")
+  .Does(() => 
+  {
+      var jarFileName = System.IO.Path.GetFullPath($"output/jar/stoneassemblies-keycloak-{NuGetVersionV2}-jar-with-dependencies.jar");
+      var mavenRepositoryUrl = "https://pkgs.dev.azure.com/alexfdezsauco/_packaging/maven/maven/v1";
+      var mavenRepositoryName = "maven";
+
+      // TODO: Add parameters.
+    	StartProcess("mvn", new ProcessSettings
+      {
+        Arguments = new ProcessArgumentBuilder()
+          .Append("deploy:deploy-file")
+          .Append($"-Durl={mavenRepositoryUrl}")
+          .Append($"-DrepositoryId={repositoryName}")
+          .Append($"-Dfile={jarFileName}")
+      });
+  });
 
 Task("Pack")
   .IsDependentOn("Build")
