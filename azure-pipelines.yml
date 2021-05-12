@@ -18,6 +18,10 @@ steps:
 
 - script: dotnet cake --target=Build
   displayName: 'Build'
+  
+- task: MavenAuthenticate@0
+  inputs:
+    artifactsFeeds: 'maven'
 
 - script: dotnet cake --target=Publish
   displayName: 'Publish'
