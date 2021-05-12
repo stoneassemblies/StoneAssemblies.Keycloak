@@ -115,6 +115,9 @@ Task("Publish")
           .Append($"-Durl={mavenRepositoryUrl}")
           .Append($"-DrepositoryId={mavenRepositoryName}")
           .Append($"-Dfile={jarFileName}")
+          .Append($"-DgroupId=stoneassemblies")
+          .Append($"-DartifactId=stoneassemblies-keycloak")
+          .Append($"-Dversion={NuGetVersionV2}")
       });
   });
 
