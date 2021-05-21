@@ -9,6 +9,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.UserStorageProviderFactory;
+import stoneassemblies.keycoak.models.Query;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,10 +30,16 @@ public class JdbcUserStorageProviderFactory implements UserStorageProviderFactor
                 String password = model.get(JdbcProviderProperties.PASSWORD);
                 String connectionString = String.format("jdbc:sqlserver://%s;databaseName=%s;user=%s;password=%s", server, database, user, password);
                 String usersQuery = model.get(JdbcProviderProperties.LIST_USERS_QUERY);
+                String usersQueryType = model.get(JdbcProviderProperties.LIST_USERS_QUERY_TYPE);
                 String updatePasswordCommand = model.get(JdbcProviderProperties.UPDATE_PASSWORD_COMMAND);
+                String updatePasswordCommandType = model.get(JdbcProviderProperties.UPDATE_PASSWORD_COMMAND_TYPE);
                 String authenticationQuery = model.get(JdbcProviderProperties.AUTHENTICATION_QUERY);
                 String authenticationQueryType = model.get(JdbcProviderProperties.AUTHENTICATION_QUERY_TYPE);
-                userRepository = new SqlServerUserRepository(connectionString, usersQuery, updatePasswordCommand, authenticationQuery, authenticationQueryType);
+
+                userRepository = new SqlServerUserRepository(connectionString,
+                        new Query(usersQuery, usersQueryType),
+                        new Query(updatePasswordCommand, updatePasswordCommandType),
+                        new Query(authenticationQuery, authenticationQueryType));
             }
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -56,8 +63,8 @@ public class JdbcUserStorageProviderFactory implements UserStorageProviderFactor
         ArrayList<String> supportedDriversOptions = new ArrayList<>();
         supportedDriversOptions.addAll(SupportedDrivers.getAll());
 
-        ArrayList<String> authenticationQueryTypes = new ArrayList<>();
-        authenticationQueryTypes.addAll(QueryTypes.getAll());
+        ArrayList<String> queryTypes = new ArrayList<>();
+        queryTypes.addAll(QueryTypes.getAll());
 
         return ProviderConfigurationBuilder.create()
                 .property(JdbcProviderProperties.JDBC_DRIVER, "Jdbc Driver", "Jdbc Driver", ProviderConfigProperty.LIST_TYPE, SupportedDrivers.MS_SQL_SERVER, supportedDriversOptions)
@@ -65,9 +72,11 @@ public class JdbcUserStorageProviderFactory implements UserStorageProviderFactor
                 .property(JdbcProviderProperties.DATABASE, "Database", "Database", ProviderConfigProperty.STRING_TYPE, "Users", null)
                 .property(JdbcProviderProperties.USERNAME, "User", "User", ProviderConfigProperty.STRING_TYPE, "sa", null)
                 .property(JdbcProviderProperties.PASSWORD, "Password", "Password", ProviderConfigProperty.PASSWORD, "Password123!", null)
+                .property(JdbcProviderProperties.LIST_USERS_QUERY_TYPE, "List Users Query Type", "List Users Query Type", ProviderConfigProperty.LIST_TYPE, QueryTypes.COMMAND_TEXT, queryTypes)
                 .property(JdbcProviderProperties.LIST_USERS_QUERY, "List Users Query", "List Users Query", ProviderConfigProperty.STRING_TYPE, "SELECT [Id], [Email], [UserName], [FirstName], [LastName], [Password] FROM [dbo].[Users]", null)
-                .property(JdbcProviderProperties.AUTHENTICATION_QUERY_TYPE, "Authentication Query Type", "Authentication Query Type", ProviderConfigProperty.LIST_TYPE, QueryTypes.COMMAND_TEXT, authenticationQueryTypes)
+                .property(JdbcProviderProperties.AUTHENTICATION_QUERY_TYPE, "Authentication Query Type", "Authentication Query Type", ProviderConfigProperty.LIST_TYPE, QueryTypes.COMMAND_TEXT, queryTypes)
                 .property(JdbcProviderProperties.AUTHENTICATION_QUERY, "Authentication Query", "Authentication Query", ProviderConfigProperty.STRING_TYPE, "SELECT PATINDEX([Password], ?) AS [Succeeded] FROM [dbo].[Users] WHERE [UserName] = ?", null)
+                .property(JdbcProviderProperties.UPDATE_PASSWORD_COMMAND_TYPE, "Update Password Command Type", "Update Password Command Type", ProviderConfigProperty.LIST_TYPE, QueryTypes.COMMAND_TEXT, queryTypes)
                 .property(JdbcProviderProperties.UPDATE_PASSWORD_COMMAND, "Update Password Command", "Update Password Command", ProviderConfigProperty.STRING_TYPE, "UPDATE [dbo].[Users] SET [Password] = ? WHERE [UserName] = ?", null)
                 .build();
     }

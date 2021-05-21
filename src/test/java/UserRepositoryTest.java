@@ -1,3 +1,4 @@
+import stoneassemblies.keycoak.models.Query;
 import stoneassemblies.keycoak.constants.QueryTypes;
 import stoneassemblies.keycoak.models.User;
 import stoneassemblies.keycoak.SqlServerUserRepository;
@@ -15,13 +16,13 @@ public class UserRepositoryTest {
         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
         //SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://localhost;databaseName=Users;user=sa;password=Password123!", "SELECT [Id]\n" +
-        SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://172.22.225.187;databaseName=Users;user=sa;password=Password123!", "SELECT [Id]\n" +
+        SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://172.22.225.187;databaseName=Users;user=sa;password=Password123!", new Query("SELECT [Id]\n" +
                 "      ,[UserName]\n" +
                 "      ,[Email]\n" +
                 "      ,[FirstName]\n" +
                 "      ,[LastName]\n" +
                 "      ,[Password]\n" +
-                "  FROM [dbo].[Users]", "", "", QueryTypes.COMMAND_TEXT);
+                "  FROM [dbo].[Users]"), null, null);
 
         User userById = userRepository.findUserById("1");
     }
@@ -32,15 +33,28 @@ public class UserRepositoryTest {
         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
         //SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://localhost;databaseName=Users;user=sa;password=Password123!", "SELECT [Id]\n" +
-        SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://localhost:11433;databaseName=Users;user=sa;password=Password-123!", "SELECT [Id]\n" +
+        SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://localhost:11433;databaseName=Users;user=sa;password=Password-123!", new Query("SELECT [Id]\n" +
                 "      ,[UserName]\n" +
                 "      ,[Email]\n" +
                 "      ,[FirstName]\n" +
                 "      ,[LastName]\n" +
                 "      ,[Password]\n" +
-                "  FROM [dbo].[Users]", "",
-                "SELECT PATINDEX([Password], ?) AS [Succeeded] FROM [dbo].[Users] WHERE [UserName] = ?",
-                QueryTypes.COMMAND_TEXT);
+                "  FROM [dbo].[Users]"), null,
+                new Query("SELECT PATINDEX([Password], ?) AS [Succeeded] FROM [dbo].[Users] WHERE [UserName] = ?"));
+
+        boolean alexfdezsauco = userRepository.validateCredentials("alexfdezsauco", "Password12345!");
+
+    }
+
+    @Test
+    public void validateCredentialsViaStoredProcedure() throws ClassNotFoundException {
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+
+        SqlServerUserRepository userRepository = new SqlServerUserRepository(
+                "jdbc:sqlserver://localhost:11433;databaseName=Users;user=sa;password=Password-123!",
+                null,
+                null,
+                new Query("validateCredentials", QueryTypes.STORED_PROCEDURE));
 
         userRepository.validateCredentials("alexfdezsauco", "Password12345!");
     }
@@ -50,13 +64,13 @@ public class UserRepositoryTest {
     public void basic2() throws ClassNotFoundException {
         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
-        SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://localhost:11433;databaseName=Users;user=sa;password=Password-123!", "SELECT [Id]\n" +
+        SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://localhost:11433;databaseName=Users;user=sa;password=Password-123!", new Query("SELECT [Id]\n" +
                 "      ,[UserName]\n" +
                 "      ,[Email]\n" +
                 "      ,[FirstName]\n" +
                 "      ,[LastName]\n" +
              //   "      ,[Password]\n" +
-                "  FROM [dbo].[Users]", "", "", QueryTypes.COMMAND_TEXT);
+                "  FROM [dbo].[Users]"), null, null);
 
         List<User> users = userRepository.getUsers(0, 1);
 

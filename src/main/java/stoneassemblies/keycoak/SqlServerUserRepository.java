@@ -2,6 +2,7 @@ package stoneassemblies.keycoak;
 
 import stoneassemblies.keycoak.constants.QueryTypes;
 import stoneassemblies.keycoak.interfaces.UserRepository;
+import stoneassemblies.keycoak.models.Query;
 import stoneassemblies.keycoak.models.User;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,24 +18,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-
 public class SqlServerUserRepository implements UserRepository {
     private static Logger log = Logger.getLogger(JdbcUserStorageProviderFactory.class.getName());
 
-    private final String authenticationQueryType;
     private final String connectionString;
-    private final String usersQuery;
-    private final String updateCredentialsCommand;
-    private final String authenticationQueryOrStoredProcedureName;
+    private final Query usersQuery;
+    private final Query updateCredentialsCommand;
+    private final Query authenticationQuery;
 
-
-    public SqlServerUserRepository(String connectionString, String usersQuery, String updateCredentialsCommand,
-                                   String authenticationQueryOrStoredProcedureName, String authenticationQueryType) {
+    public SqlServerUserRepository(String connectionString,
+                                   Query usersQuery,
+                                   Query updateCredentialsQuery,
+                                   Query validateCredentialsQuery) {
         this.connectionString = connectionString;
         this.usersQuery = usersQuery; // TODO: Validate for security reason.
-        this.updateCredentialsCommand = updateCredentialsCommand;
-        this.authenticationQueryOrStoredProcedureName = authenticationQueryOrStoredProcedureName;
-        this.authenticationQueryType = authenticationQueryType;
+        this.updateCredentialsCommand = updateCredentialsQuery;
+        this.authenticationQuery = validateCredentialsQuery;
     }
 
     public static User mapRow(ResultSet resultSet, int i) throws SQLException {
@@ -70,7 +69,7 @@ public class SqlServerUserRepository implements UserRepository {
     public List<User> getAllUsers() {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            return jdbcTemplate.query(usersQuery, SqlServerUserRepository::mapRow);
+            return jdbcTemplate.query(usersQuery.getText(), SqlServerUserRepository::mapRow);
         } catch (DataAccessException e) {
             e.printStackTrace();
         }
@@ -120,18 +119,18 @@ public class SqlServerUserRepository implements UserRepository {
     @Override
     public boolean validateCredentials(String username, String password) {
         boolean succeeded;
-        if (authenticationQueryOrStoredProcedureName != null && !authenticationQueryOrStoredProcedureName.trim().equals("")) {
+        if (authenticationQuery != null && !authenticationQuery.getText().trim().equals("")) {
             try {
                 JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-                if (this.authenticationQueryType.equals(QueryTypes.COMMAND_TEXT)) {
+                if (this.authenticationQuery.getQueryType().equals(QueryTypes.COMMAND_TEXT)) {
                     log.info("Validating credentials using command text");
-                    succeeded = jdbcTemplate.query(authenticationQueryOrStoredProcedureName, preparedStatement -> {
+                    succeeded = jdbcTemplate.query(authenticationQuery.getText(), preparedStatement -> {
                         preparedStatement.setString(1, password);
                         preparedStatement.setString(2, username);
                     }, resultSet -> resultSet.next() && resultSet.getBoolean("Succeeded") && !resultSet.next());
                 } else {
                     log.info("Validating credentials using stored procedure");
-                    SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate).withProcedureName(this.authenticationQueryOrStoredProcedureName);
+                    SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate).withProcedureName(this.authenticationQuery.getText());
                     MapSqlParameterSource mapSqlParameterSource = new MapSqlParameterSource()
                             .addValue("username", username)
                             .addValue("password", password);
@@ -154,7 +153,7 @@ public class SqlServerUserRepository implements UserRepository {
     public boolean updateCredentials(String username, String password) {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            jdbcTemplate.execute(updateCredentialsCommand, (PreparedStatementCallback<Object>) preparedStatement -> {
+            jdbcTemplate.execute(updateCredentialsCommand.getText(), (PreparedStatementCallback<Object>) preparedStatement -> {
                 preparedStatement.setString(1, password);
                 preparedStatement.setString(2, username);
                 return preparedStatement.execute();

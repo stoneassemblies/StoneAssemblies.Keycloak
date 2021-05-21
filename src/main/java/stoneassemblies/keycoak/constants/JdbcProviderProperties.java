@@ -10,4 +10,6 @@ public class JdbcProviderProperties {
     public static final String AUTHENTICATION_QUERY = "authenticationQuery";
     public static final String UPDATE_PASSWORD_COMMAND = "updatePasswordCommand";
     public static final String AUTHENTICATION_QUERY_TYPE = "authenticationQueryType";
+    public static final String LIST_USERS_QUERY_TYPE = "listUsersQueryType";
+    public static final String UPDATE_PASSWORD_COMMAND_TYPE = "updatePasswordCommandType";
 }
