@@ -13,10 +13,12 @@ import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class SqlServerUserRepository implements UserRepository {
     private static Logger log = Logger.getLogger(JdbcUserStorageProviderFactory.class.getName());
@@ -56,6 +58,13 @@ public class SqlServerUserRepository implements UserRepository {
 
         try {
             user.setPassword(resultSet.getString("Password"));
+        } catch (SQLException exception) {
+        }
+
+        try {
+            String commaSeparatedRoles = resultSet.getString("Roles");
+            List<String> roles = Arrays.stream(commaSeparatedRoles.split(",")).map(s -> s.trim()).filter(s -> !s.equals("")).collect(Collectors.toList());
+            user.setRoles(roles);
         } catch (SQLException exception) {
         }
 

@@ -1,6 +1,8 @@
 package stoneassemblies.keycoak.models;
 
 
+import java.util.List;
+
 public class User {
 
     private String id;
@@ -11,6 +13,7 @@ public class User {
     private String password;
     private boolean enabled;
     private Long created;
+    private List<String> roles;
 
     public User() {
     }
@@ -77,5 +80,13 @@ public class User {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
+    }
+
+    public List<String> getRoles() {
+        return roles;
     }
 }

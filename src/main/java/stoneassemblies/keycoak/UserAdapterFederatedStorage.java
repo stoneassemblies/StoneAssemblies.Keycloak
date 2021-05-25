@@ -7,6 +7,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class UserAdapterFederatedStorage extends AbstractUserAdapterFederatedStorage {
 
@@ -20,7 +23,10 @@ public class UserAdapterFederatedStorage extends AbstractUserAdapterFederatedSto
         setEmail(user.getEmail());
         setEnabled(user.isEnabled());
         setCreatedTimestamp(user.getCreated());
-        // this.setSingleAttribute();
+        List<String> roles = user.getRoles();
+        if(roles != null){
+            this.setAttribute("FederatedRoles", roles);
+        }
     }
 
     @Override
