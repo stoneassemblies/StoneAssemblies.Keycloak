@@ -16,7 +16,7 @@ public class UserRepositoryTest {
         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
         //SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://localhost;databaseName=Users;user=sa;password=Password123!", "SELECT [Id]\n" +
-        SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://172.22.225.187;databaseName=Users;user=sa;password=Password123!", new Query("SELECT [Id]\n" +
+        SqlServerUserRepository userRepository = new SqlServerUserRepository("jdbc:sqlserver://192.168.1.6:11433;databaseName=Users;user=sa;password=Password123!", new Query("SELECT [Id]\n" +
                 "      ,[UserName]\n" +
                 "      ,[Email]\n" +
                 "      ,[FirstName]\n" +
@@ -47,6 +47,7 @@ public class UserRepositoryTest {
     }
 
     @Test
+    @Ignore
     public void validateCredentialsViaStoredProcedure() throws ClassNotFoundException {
         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 

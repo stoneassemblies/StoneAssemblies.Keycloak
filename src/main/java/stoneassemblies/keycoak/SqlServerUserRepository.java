@@ -94,7 +94,7 @@ public class SqlServerUserRepository implements UserRepository {
     public User findUserById(String id) {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE Id=?", usersQuery),
+            return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE Id=?", usersQuery.getText()),
                     SqlServerUserRepository::mapRow, new Object[]{id});
         } catch (DataAccessException e) {
             e.printStackTrace();
@@ -107,7 +107,7 @@ public class SqlServerUserRepository implements UserRepository {
     public User findUserByUsernameOrEmail(String username) {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE UserName=? OR Email=?", usersQuery),
+            return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE UserName=? OR Email=?", usersQuery.getText()),
                     SqlServerUserRepository::mapRow, new Object[]{username, username});
         } catch (DataAccessException e) {
             e.printStackTrace();
@@ -171,7 +171,7 @@ public class SqlServerUserRepository implements UserRepository {
     public List<User> getUsers(int offset, int take) {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            return jdbcTemplate.query(String.format("SELECT * FROM (%s) T ORDER BY Id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", usersQuery),
+            return jdbcTemplate.query(String.format("SELECT * FROM (%s) T ORDER BY Id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY", usersQuery.getText()),
                     SqlServerUserRepository::mapRow, new Object[]{new Integer(offset), new Integer(take)});
         } catch (DataAccessException e) {
             e.printStackTrace();
@@ -186,7 +186,7 @@ public class SqlServerUserRepository implements UserRepository {
         try {
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
             String searchPattern = String.format("%%%s%%", search);
-            return jdbcTemplate.query(String.format("SELECT TOP 0 * FROM (%s) T WHERE UserName LIKE ? OR Email LIKE ? OR FirstName LIKE ? OR LastName LIKE ?", usersQuery),
+            return jdbcTemplate.query(String.format("SELECT TOP 0 * FROM (%s) T WHERE UserName LIKE ? OR Email LIKE ? OR FirstName LIKE ? OR LastName LIKE ?", usersQuery.getText()),
                     SqlServerUserRepository::mapRow, new Object[]{searchPattern, searchPattern, searchPattern, searchPattern});
         } catch (DataAccessException e) {
             e.printStackTrace();
@@ -200,7 +200,7 @@ public class SqlServerUserRepository implements UserRepository {
         try {
             String searchPattern = String.format("%%%s%%", search);
             JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            return jdbcTemplate.query(String.format("SELECT COUNT(*) FROM (%s) T WHERE UserName LIKE ? OR Email LIKE ? OR FirstName LIKE ? OR LastName LIKE ?", usersQuery), resultSet -> resultSet.next() ?
+            return jdbcTemplate.query(String.format("SELECT COUNT(*) FROM (%s) T WHERE UserName LIKE ? OR Email LIKE ? OR FirstName LIKE ? OR LastName LIKE ?", usersQuery.getText()), resultSet -> resultSet.next() ?
                     resultSet.getInt(1) : 0, new Object[]{searchPattern, searchPattern, searchPattern, searchPattern});
         } catch (DataAccessException e) {
             e.printStackTrace();
