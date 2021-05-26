@@ -13,10 +13,7 @@ import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -49,11 +46,13 @@ public class SqlServerUserRepository implements UserRepository {
         try {
             user.setFirstName(resultSet.getString("FirstName"));
         } catch (SQLException exception) {
+            user.setFirstName("");
         }
 
         try {
             user.setLastName(resultSet.getString("LastName"));
         } catch (SQLException exception) {
+            user.setLastName("");
         }
 
         try {
@@ -61,11 +60,17 @@ public class SqlServerUserRepository implements UserRepository {
         } catch (SQLException exception) {
         }
 
+        String commaSeparatedRoles = null;
         try {
-            String commaSeparatedRoles = resultSet.getString("Roles");
+             commaSeparatedRoles = resultSet.getString("Roles");
+        } catch (SQLException exception) {
+        }
+
+        if (commaSeparatedRoles != null) {
             List<String> roles = Arrays.stream(commaSeparatedRoles.split(",")).map(s -> s.trim()).filter(s -> !s.equals("")).collect(Collectors.toList());
             user.setRoles(roles);
-        } catch (SQLException exception) {
+        } else {
+            user.setRoles(new ArrayList<>());
         }
 
         user.setEnabled(true);
