@@ -24,14 +24,8 @@ public class UserAdapterFederatedStorage extends AbstractUserAdapterFederatedSto
         setEmail(user.getEmail());
         setEnabled(user.isEnabled());
         setCreatedTimestamp(user.getCreated());
-        List<String> roles = user.getRoles();
+        List<String> roles = this.user.getRoles();
         if (roles != null) {
-            try {
-                this.removeAttribute(FEDERATED_ROLES);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-
             this.setAttribute(FEDERATED_ROLES, roles);
         }
     }
@@ -54,4 +48,5 @@ public class UserAdapterFederatedStorage extends AbstractUserAdapterFederatedSto
     public void setUsername(String username) {
         user.setUsername(username);
     }
+
 }
