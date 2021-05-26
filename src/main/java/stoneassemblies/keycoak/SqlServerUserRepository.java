@@ -60,6 +60,17 @@ public class SqlServerUserRepository implements UserRepository {
         } catch (SQLException exception) {
         }
 
+        try {
+            user.setEnabled(resultSet.getBoolean("IsEnabled"));
+        } catch (SQLException exception) {
+            user.setEnabled(true);
+        }
+
+        try {
+            user.setEmailVerified(resultSet.getBoolean("IsEmailVerified"));
+        } catch (SQLException exception) {
+        }
+
         String commaSeparatedRoles = null;
         try {
              commaSeparatedRoles = resultSet.getString("Roles");
@@ -73,7 +84,6 @@ public class SqlServerUserRepository implements UserRepository {
             user.setRoles(new ArrayList<>());
         }
 
-        user.setEnabled(true);
         user.setCreated(System.currentTimeMillis());
         return user;
     }

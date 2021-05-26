@@ -7,10 +7,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
 
 
 public class UserAdapterFederatedStorage extends AbstractUserAdapterFederatedStorage {
+
+    private static Logger log = Logger.getLogger(UserAdapterFederatedStorage.class.getName());
 
     private final User user;
 
@@ -22,6 +27,7 @@ public class UserAdapterFederatedStorage extends AbstractUserAdapterFederatedSto
         setFirstName(user.getFirstName());
         setLastName(user.getLastName());
         setEmail(user.getEmail());
+        setEmailVerified(user.isEmailVerified());
         setEnabled(user.isEnabled());
         setCreatedTimestamp(user.getCreated());
         List<String> roles = this.user.getRoles();

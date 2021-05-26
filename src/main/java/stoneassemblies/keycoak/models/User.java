@@ -14,6 +14,7 @@ public class User {
     private boolean enabled;
     private Long created;
     private List<String> roles;
+    private boolean isEmailVerified;
 
     public User() {
     }
@@ -88,5 +89,13 @@ public class User {
 
     public List<String> getRoles() {
         return roles;
+    }
+
+    public boolean isEmailVerified() {
+        return this.isEmailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        isEmailVerified = emailVerified;
     }
 }
