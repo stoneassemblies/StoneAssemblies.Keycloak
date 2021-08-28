@@ -92,7 +92,7 @@ public class SqlServerUserRepository implements UserRepository {
     @Override
     public List<User> getAllUsers() {
         try {
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(this.connectionString, false));
             return jdbcTemplate.query(usersQuery.getText(), SqlServerUserRepository::mapRow);
         } catch (DataAccessException e) {
             e.printStackTrace();
@@ -104,8 +104,8 @@ public class SqlServerUserRepository implements UserRepository {
     @Override
     public int getUsersCount() {
         try {
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            return jdbcTemplate.query(String.format("SELECT COUNT(*) FROM (%s) T", usersQuery), resultSet -> resultSet.next() ?
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(this.connectionString, false));
+            return jdbcTemplate.query(String.format("SELECT COUNT(*) FROM (%s) T", this.usersQuery), resultSet -> resultSet.next() ?
                     resultSet.getInt(1) : 0);
         } catch (DataAccessException e) {
             e.printStackTrace();
@@ -117,8 +117,8 @@ public class SqlServerUserRepository implements UserRepository {
     @Override
     public User findUserById(String id) {
         try {
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE Id=?", usersQuery.getText()),
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(this.connectionString, false));
+            return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE Id=?", this.usersQuery.getText()),
                     SqlServerUserRepository::mapRow, new Object[]{id});
         } catch (DataAccessException e) {
             e.printStackTrace();
@@ -130,8 +130,8 @@ public class SqlServerUserRepository implements UserRepository {
     @Override
     public User findUserByUsernameOrEmail(String username) {
         try {
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE UserName=? OR Email=?", usersQuery.getText()),
+            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(this.connectionString, false));
+            return jdbcTemplate.queryForObject(String.format("SELECT * FROM (%s) T WHERE UserName=? OR Email=?", this.usersQuery.getText()),
                     SqlServerUserRepository::mapRow, new Object[]{username, username});
         } catch (DataAccessException e) {
             e.printStackTrace();
@@ -143,15 +143,15 @@ public class SqlServerUserRepository implements UserRepository {
     @Override
     public boolean validateCredentials(String username, String password) {
         boolean succeeded;
-        if (authenticationQuery != null && !authenticationQuery.getText().trim().equals("")) {
+        if (this.authenticationQuery != null && !this.authenticationQuery.getText().trim().equals("")) {
             try {
                 JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
                 if (this.authenticationQuery.getQueryType().equals(QueryTypes.COMMAND_TEXT)) {
                     log.info("Validating credentials using command text");
-                    succeeded = jdbcTemplate.query(authenticationQuery.getText(), preparedStatement -> {
+                    succeeded = jdbcTemplate.query(this.authenticationQuery.getText(), preparedStatement -> {
                         preparedStatement.setString(1, password);
                         preparedStatement.setString(2, username);
-                    }, resultSet -> resultSet.next() && resultSet.getBoolean("Succeeded") && !resultSet.next());
+                    }, resultSet -> resultSet.next() && resultSet.getBoolean("succeeded") && !resultSet.next());
                 } else {
                     log.info("Validating credentials using stored procedure");
                     SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate).withProcedureName(this.authenticationQuery.getText());
@@ -159,7 +159,7 @@ public class SqlServerUserRepository implements UserRepository {
                             .addValue("username", username)
                             .addValue("password", password);
                     Map<String, Object> execute = simpleJdbcCall.execute(mapSqlParameterSource);
-                    succeeded = (boolean) execute.get("Succeeded");
+                    succeeded = (boolean) execute.get("succeeded");
                 }
             } catch (Exception e) {
                 succeeded = false;
@@ -175,17 +175,33 @@ public class SqlServerUserRepository implements UserRepository {
 
     @Override
     public boolean updateCredentials(String username, String password) {
-        try {
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
-            jdbcTemplate.execute(updateCredentialsCommand.getText(), (PreparedStatementCallback<Object>) preparedStatement -> {
-                preparedStatement.setString(1, password);
-                preparedStatement.setString(2, username);
-                return preparedStatement.execute();
-            });
+        if (this.updateCredentialsCommand != null && !this.updateCredentialsCommand.getText().trim().equals("")) {
+            try {
+                JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
+                if (this.updateCredentialsCommand.getQueryType().equals(QueryTypes.COMMAND_TEXT)) {
+                    log.info("Updating credentials using command text");
 
-            return true;
-        } catch (DataAccessException e) {
-            e.printStackTrace();
+                    jdbcTemplate.execute(this.updateCredentialsCommand.getText(), (PreparedStatementCallback<Object>) preparedStatement -> {
+                        preparedStatement.setString(1, password);
+                        preparedStatement.setString(2, username);
+                        return preparedStatement.execute();
+                    });
+                }
+                else {
+                    log.info("Updating  credentials using stored procedure");
+
+                    SimpleJdbcCall simpleJdbcCall = new SimpleJdbcCall(jdbcTemplate).withProcedureName(this.updateCredentialsCommand.getText());
+                    MapSqlParameterSource mapSqlParameterSource = new MapSqlParameterSource()
+                            .addValue("username", username)
+                            .addValue("password", password);
+
+                    simpleJdbcCall.execute(mapSqlParameterSource);
+                }
+
+                return true;
+            } catch (DataAccessException e) {
+                e.printStackTrace();
+            }
         }
 
         return false;
