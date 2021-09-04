@@ -91,14 +91,15 @@ public class SqlServerUserRepository implements UserRepository {
 
     @Override
     public List<User> getAllUsers() {
-        try {
-            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(this.connectionString, false));
-            return jdbcTemplate.query(usersQuery.getText(), SqlServerUserRepository::mapRow);
-        } catch (DataAccessException e) {
-            e.printStackTrace();
-        }
+        // TODO: Fix this ?
+//        try {
+//            JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(this.connectionString, false));
+//            return jdbcTemplate.query(usersQuery.getText(), SqlServerUserRepository::mapRow);
+//        } catch (DataAccessException e) {
+//            e.printStackTrace();
+//        }
 
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     @Override
@@ -142,7 +143,7 @@ public class SqlServerUserRepository implements UserRepository {
 
     @Override
     public boolean validateCredentials(String username, String password) {
-        boolean succeeded;
+        boolean succeeded = false;
         if (this.authenticationQuery != null && !this.authenticationQuery.getText().trim().equals("")) {
             try {
                 JdbcTemplate jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(connectionString, false));
@@ -159,7 +160,20 @@ public class SqlServerUserRepository implements UserRepository {
                             .addValue("username", username)
                             .addValue("password", password);
                     Map<String, Object> execute = simpleJdbcCall.execute(mapSqlParameterSource);
-                    succeeded = (boolean) execute.get("succeeded");
+                    if(execute != null){
+                        List<Map<String, Object>> maps = (List<Map<String, Object>>) execute.get("#result-set-1");
+                        Map<String, Object> stringObjectMap = maps.stream().findFirst().get();
+                        if(stringObjectMap != null){
+                            Object result = stringObjectMap.values().stream().findFirst().get();
+                            if(result instanceof Integer){
+                                succeeded = (int) result == 1;
+                            }
+                            else if(result instanceof Boolean)
+                            {
+                                succeeded = (boolean) result;
+                            }
+                        }
+                    }
                 }
             } catch (Exception e) {
                 succeeded = false;
