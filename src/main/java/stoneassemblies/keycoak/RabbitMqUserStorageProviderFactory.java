@@ -13,11 +13,17 @@ public class RabbitMqUserStorageProviderFactory implements UserStorageProviderFa
 
     @Override
     public UserStorageProvider create(KeycloakSession keycloakSession, ComponentModel componentModel) {
+        String secret = componentModel.get(RabbitMqProviderProperties.SECRET);
+        if (secret != null) {
+            secret = secret.trim();
+        }
+
         return new UserStorageProvider(keycloakSession, componentModel, new RabbitMqUserRepository(
                 componentModel.get(RabbitMqProviderProperties.HOST),
                 Integer.parseInt(componentModel.get(RabbitMqProviderProperties.PORT)),
                 componentModel.get(RabbitMqProviderProperties.USERNAME),
-                componentModel.get(RabbitMqProviderProperties.PASSWORD)));
+                componentModel.get(RabbitMqProviderProperties.PASSWORD),
+                secret == null || secret.equals("") ? new DefaultEncryptionService() : new AesEncryptionService(secret)));
     }
 
     @Override
@@ -27,6 +33,7 @@ public class RabbitMqUserStorageProviderFactory implements UserStorageProviderFa
                 .property(RabbitMqProviderProperties.PORT, "Port", "Port", ProviderConfigProperty.STRING_TYPE, "5672", null)
                 .property(RabbitMqProviderProperties.USERNAME, "Username", "Username", ProviderConfigProperty.STRING_TYPE, "admin", null)
                 .property(RabbitMqProviderProperties.PASSWORD, "Password", "Password", ProviderConfigProperty.PASSWORD, "admin", null)
+                .property(RabbitMqProviderProperties.SECRET, "Secret", "Secret", ProviderConfigProperty.PASSWORD, "sOme*ShaREd*SecreT", null)
                 .build();
     }
 

@@ -6,28 +6,37 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import stoneassemblies.keycoak.interfaces.EncryptionService;
 import stoneassemblies.keycoak.interfaces.UserRepository;
 import stoneassemblies.keycoak.models.User;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RabbitMqUserRepository implements UserRepository {
     private final String host;
     private final String username;
     private final String password;
+    private final EncryptionService encryptionService;
     private final int port;
 
-    public RabbitMqUserRepository(String host, int port, String username, String password) {
+    public RabbitMqUserRepository(String host, int port, String username, String password,  stoneassemblies.keycoak.interfaces.EncryptionService encryptionService) {
         this.host = host;
         this.port = port;
         this.username = username;
         this.password = password;
+        this.encryptionService = encryptionService;
     }
 
     @Override
@@ -101,7 +110,6 @@ public class RabbitMqUserRepository implements UserRepository {
 
             channel.basicPublish(exchange0, queueName, null, requestMessage.getBytes());
 
-
             ExecutorService executor = Executors.newSingleThreadExecutor();
             Future<Integer> submit = executor.submit(() -> {
                 while (receivedMessage.get() == null) {
@@ -116,15 +124,8 @@ public class RabbitMqUserRepository implements UserRepository {
             });
 
             submit.get(2, TimeUnit.SECONDS);
-
             executor.shutdown();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (TimeoutException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -196,24 +197,31 @@ public class RabbitMqUserRepository implements UserRepository {
         final String exchange0 = "StoneAssemblies.Keycloak.Messages:ValidateCredentialsRequestMessage";
         final String exchange1 = "StoneAssemblies.Keycloak.Messages:ValidateCredentialsResponseMessage";
 
-        UUID correlationId = UUID.randomUUID();
-        String requestMessage = "{\n" +
-                "    \"message\": {\n" +
-                "        \"correlationId\": \"" + correlationId + "\",\n" +
-                "        \"username\": \"" + username + "\",\n" +
-                "        \"password\": \"" + password + "\"\n" +
-                "    },\n" +
-                "    \"messageType\": [\n" +
-                "        \"urn:message:StoneAssemblies.Keycloak.Messages:ValidateCredentialsRequestMessage\"\n" +
-                "    ]\n" +
-                "}";
+        try {
+            password = this.encryptionService.encrypt(password);
 
-        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
+            UUID correlationId = UUID.randomUUID();
+            String requestMessage = "{\n" +
+                    "    \"message\": {\n" +
+                    "        \"correlationId\": \"" + correlationId + "\",\n" +
+                    "        \"username\": \"" + username + "\",\n" +
+                    "        \"password\": \"" + password + "\"\n" +
+                    "    },\n" +
+                    "    \"messageType\": [\n" +
+                    "        \"urn:message:StoneAssemblies.Keycloak.Messages:ValidateCredentialsRequestMessage\"\n" +
+                    "    ]\n" +
+                    "}";
 
-        JSONObject message = response.getJSONObject("message");
-        if (message.has("succeeded")) {
-            return message.getBoolean("succeeded");
+            JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
+            JSONObject message = response.getJSONObject("message");
+            if (message.has("succeeded")) {
+                return message.getBoolean("succeeded");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
         return false;
     }
 
@@ -223,24 +231,29 @@ public class RabbitMqUserRepository implements UserRepository {
         final String exchange0 = "StoneAssemblies.Keycloak.Messages:UpdateCredentialsRequestMessage";
         final String exchange1 = "StoneAssemblies.Keycloak.Messages:UpdateCredentialsResponseMessage";
 
-        UUID correlationId = UUID.randomUUID();
-        String requestMessage = "{\n" +
-                "    \"message\": {\n" +
-                "        \"correlationId\": \"" + correlationId + "\",\n" +
-                "        \"username\": \"" + username + "\",\n" +
-                "        \"password\": \"" + password + "\"\n" +
-                "    },\n" +
-                "    \"messageType\": [\n" +
-                "        \"urn:message:StoneAssemblies.Keycloak.Messages:UpdateCredentialsRequestMessage\"\n" +
-                "    ]\n" +
-                "}";
+        try {
+            password = this.encryptionService.encrypt(password);
+            UUID correlationId = UUID.randomUUID();
+            String requestMessage = "{\n" +
+                    "    \"message\": {\n" +
+                    "        \"correlationId\": \"" + correlationId + "\",\n" +
+                    "        \"username\": \"" + username + "\",\n" +
+                    "        \"password\": \"" + password + "\"\n" +
+                    "    },\n" +
+                    "    \"messageType\": [\n" +
+                    "        \"urn:message:StoneAssemblies.Keycloak.Messages:UpdateCredentialsRequestMessage\"\n" +
+                    "    ]\n" +
+                    "}";
 
-        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
-
-        JSONObject message = response.getJSONObject("message");
-        if (message.has("succeeded")) {
-            return message.getBoolean("succeeded");
+            JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
+            JSONObject message = response.getJSONObject("message");
+            if (message.has("succeeded")) {
+                return message.getBoolean("succeeded");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
         return false;
     }
 
