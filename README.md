@@ -7,6 +7,7 @@ This extension includes:
 
 - JBDC user federation (SqlServer).
 - Keycloak user federation (Not Brokering).
+- RabbitMQ user federation (Experimental).
 
 
 Build Status
