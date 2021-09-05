@@ -7,3 +7,4 @@ public class KeycloakProviderProperties {
     public static final String PASSWORD = "password";
     public static final String CLIENT_ID = "clientId";
 }
+
