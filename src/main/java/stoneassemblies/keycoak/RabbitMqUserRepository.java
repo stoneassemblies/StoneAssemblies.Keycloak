@@ -38,8 +38,8 @@ public class RabbitMqUserRepository implements UserRepository {
     @Override
     public int getUsersCount() {
         final String queueName = "UsersCountRequestMessage";
-        final String exchange0 = "StoneAssemblies.Keycloak:UsersCountRequestMessage";
-        final String exchange1 = "StoneAssemblies.Keycloak:UsersCountResponseMessage";
+        final String exchange0 = "StoneAssemblies.Keycloak.Messages:UsersCountRequestMessage";
+        final String exchange1 = "StoneAssemblies.Keycloak.Messages:UsersCountResponseMessage";
 
         UUID correlationId = UUID.randomUUID();
         String requestMessage = "{\n" +
@@ -47,7 +47,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 "        \"correlationId\": \"" + correlationId + "\",\n" +
                 "    },\n" +
                 "    \"messageType\": [\n" +
-                "        \"urn:message:StoneAssemblies.Keycloak:UsersCountRequestMessage\"\n" +
+                "        \"urn:message:StoneAssemblies.Keycloak.Messages:UsersCountRequestMessage\"\n" +
                 "    ]\n" +
                 "}";
 
@@ -134,8 +134,8 @@ public class RabbitMqUserRepository implements UserRepository {
     @Override
     public User findUserById(String id) {
         final String queueName = "FindUserByIdRequestMessage";
-        final String exchange0 = "StoneAssemblies.Keycloak:FindUserByIdRequestMessage";
-        final String exchange1 = "StoneAssemblies.Keycloak:FindUserByIdResponseMessage";
+        final String exchange0 = "StoneAssemblies.Keycloak.Messages:FindUserByIdRequestMessage";
+        final String exchange1 = "StoneAssemblies.Keycloak.Messages:FindUserByIdResponseMessage";
 
         UUID correlationId = UUID.randomUUID();
         String requestMessage = "{\n" +
@@ -144,7 +144,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 "        \"userId\": \"" + id + "\"\n" +
                 "    },\n" +
                 "    \"messageType\": [\n" +
-                "        \"urn:message:StoneAssemblies.Keycloak:FindUserByIdRequestMessage\"\n" +
+                "        \"urn:message:StoneAssemblies.Keycloak.Messages:FindUserByIdRequestMessage\"\n" +
                 "    ]\n" +
                 "}";
 
@@ -169,8 +169,8 @@ public class RabbitMqUserRepository implements UserRepository {
     @Override
     public User findUserByUsernameOrEmail(String username) {
         final String queueName = "FindUserByUsernameOrEmail";
-        final String exchange0 = "StoneAssemblies.Keycloak:FindUserByUsernameOrEmailRequestMessage";
-        final String exchange1 = "StoneAssemblies.Keycloak:FindUserByUsernameOrEmailResponseMessage";
+        final String exchange0 = "StoneAssemblies.Keycloak.Messages:FindUserByUsernameOrEmailRequestMessage";
+        final String exchange1 = "StoneAssemblies.Keycloak.Messages:FindUserByUsernameOrEmailResponseMessage";
 
         UUID correlationId = UUID.randomUUID();
         String requestMessage = "{\n" +
@@ -179,7 +179,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 "        \"UsernameOrEmail\": \"" + username + "\"\n" +
                 "    },\n" +
                 "    \"messageType\": [\n" +
-                "        \"urn:message:StoneAssemblies.Keycloak:FindUserByUsernameOrEmailRequestMessage\"\n" +
+                "        \"urn:message:StoneAssemblies.Keycloak.Messages:FindUserByUsernameOrEmailRequestMessage\"\n" +
                 "    ]\n" +
                 "}";
 
@@ -193,8 +193,8 @@ public class RabbitMqUserRepository implements UserRepository {
     @Override
     public boolean validateCredentials(String username, String password) {
         final String queueName = "ValidateCredentialsRequestMessage";
-        final String exchange0 = "StoneAssemblies.Keycloak:ValidateCredentialsRequestMessage";
-        final String exchange1 = "StoneAssemblies.Keycloak:ValidateCredentialsResponseMessage";
+        final String exchange0 = "StoneAssemblies.Keycloak.Messages:ValidateCredentialsRequestMessage";
+        final String exchange1 = "StoneAssemblies.Keycloak.Messages:ValidateCredentialsResponseMessage";
 
         UUID correlationId = UUID.randomUUID();
         String requestMessage = "{\n" +
@@ -204,7 +204,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 "        \"password\": \"" + password + "\"\n" +
                 "    },\n" +
                 "    \"messageType\": [\n" +
-                "        \"urn:message:StoneAssemblies.Keycloak:ValidateCredentialsRequestMessage\"\n" +
+                "        \"urn:message:StoneAssemblies.Keycloak.Messages:ValidateCredentialsRequestMessage\"\n" +
                 "    ]\n" +
                 "}";
 
@@ -220,8 +220,8 @@ public class RabbitMqUserRepository implements UserRepository {
     @Override
     public boolean updateCredentials(String username, String password) {
         final String queueName = "UpdateCredentialsRequestMessage";
-        final String exchange0 = "StoneAssemblies.Keycloak:UpdateCredentialsRequestMessage";
-        final String exchange1 = "StoneAssemblies.Keycloak:UpdateCredentialsResponseMessage";
+        final String exchange0 = "StoneAssemblies.Keycloak.Messages:UpdateCredentialsRequestMessage";
+        final String exchange1 = "StoneAssemblies.Keycloak.Messages:UpdateCredentialsResponseMessage";
 
         UUID correlationId = UUID.randomUUID();
         String requestMessage = "{\n" +
@@ -231,7 +231,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 "        \"password\": \"" + password + "\"\n" +
                 "    },\n" +
                 "    \"messageType\": [\n" +
-                "        \"urn:message:StoneAssemblies.Keycloak:UpdateCredentialsRequestMessage\"\n" +
+                "        \"urn:message:StoneAssemblies.Keycloak.Messages:UpdateCredentialsRequestMessage\"\n" +
                 "    ]\n" +
                 "}";
 
@@ -247,8 +247,8 @@ public class RabbitMqUserRepository implements UserRepository {
     @Override
     public List<User> getUsers(int offset, int take) {
         final String queueName = "FindUserByUsernameOrEmail";
-        final String exchange0 = "StoneAssemblies.Keycloak:UsersRequestMessage";
-        final String exchange1 = "StoneAssemblies.Keycloak:UsersResponseMessage";
+        final String exchange0 = "StoneAssemblies.Keycloak.Messages:UsersRequestMessage";
+        final String exchange1 = "StoneAssemblies.Keycloak.Messages:UsersResponseMessage";
 
         UUID correlationId = UUID.randomUUID();
         String requestMessage = "{\n" +
@@ -258,7 +258,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 "        \"take\": " + take + "\n" +
                 "    },\n" +
                 "    \"messageType\": [\n" +
-                "        \"urn:message:StoneAssemblies.Keycloak:UsersRequestMessage\"\n" +
+                "        \"urn:message:StoneAssemblies.Keycloak.Messages:UsersRequestMessage\"\n" +
                 "    ]\n" +
                 "}";
 
