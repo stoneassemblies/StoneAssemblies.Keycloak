@@ -10,32 +10,29 @@ import stoneassemblies.keycoak.interfaces.EncryptionService;
 import stoneassemblies.keycoak.interfaces.UserRepository;
 import stoneassemblies.keycoak.models.User;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RabbitMqUserRepository implements UserRepository {
     private final String host;
     private final String username;
     private final String password;
+    private final long timeout;
     private final EncryptionService encryptionService;
     private final int port;
 
-    public RabbitMqUserRepository(String host, int port, String username, String password,  stoneassemblies.keycoak.interfaces.EncryptionService encryptionService) {
+    public RabbitMqUserRepository(String host, int port, String username, String password, long timeout, stoneassemblies.keycoak.interfaces.EncryptionService encryptionService) {
         this.host = host;
         this.port = port;
         this.username = username;
         this.password = password;
+        this.timeout = timeout;
         this.encryptionService = encryptionService;
     }
 
@@ -60,11 +57,11 @@ public class RabbitMqUserRepository implements UserRepository {
                 "    ]\n" +
                 "}";
 
-        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
+        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
         return response.getJSONObject("message").getInt("count");
     }
 
-    private JSONObject basicRequest(String queueName, String exchange0, String exchange1, UUID correlationId, String requestMessage, long timeout, TimeUnit timeUnit) {
+    private JSONObject basicRequest(String queueName, String exchange0, String exchange1, UUID correlationId, String requestMessage) {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(this.host);
         factory.setPort(this.port);
@@ -123,7 +120,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 return 0;
             });
 
-            submit.get(2, TimeUnit.SECONDS);
+            submit.get(this.timeout, TimeUnit.SECONDS);
             executor.shutdown();
         } catch (Exception e) {
             e.printStackTrace();
@@ -149,7 +146,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 "    ]\n" +
                 "}";
 
-        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
+        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
         JSONObject userJsonObject = response.getJSONObject("message").getJSONObject("user");
         User user = getUser(userJsonObject);
         return user;
@@ -184,7 +181,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 "    ]\n" +
                 "}";
 
-        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
+        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
         JSONObject message = response.getJSONObject("message");
         JSONObject userJsonObject = message.getJSONObject("user");
         User user = getUser(userJsonObject);
@@ -212,7 +209,7 @@ public class RabbitMqUserRepository implements UserRepository {
                     "    ]\n" +
                     "}";
 
-            JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
+            JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
             JSONObject message = response.getJSONObject("message");
             if (message.has("succeeded")) {
                 return message.getBoolean("succeeded");
@@ -245,7 +242,7 @@ public class RabbitMqUserRepository implements UserRepository {
                     "    ]\n" +
                     "}";
 
-            JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
+            JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
             JSONObject message = response.getJSONObject("message");
             if (message.has("succeeded")) {
                 return message.getBoolean("succeeded");
@@ -275,7 +272,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 "    ]\n" +
                 "}";
 
-        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage, 2, TimeUnit.SECONDS);
+        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
         JSONObject message = response.getJSONObject("message");
         JSONArray users = message.getJSONArray("users");
 

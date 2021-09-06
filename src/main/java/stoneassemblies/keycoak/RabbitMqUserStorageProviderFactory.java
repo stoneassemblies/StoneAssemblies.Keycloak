@@ -23,6 +23,7 @@ public class RabbitMqUserStorageProviderFactory implements UserStorageProviderFa
                 Integer.parseInt(componentModel.get(RabbitMqProviderProperties.PORT)),
                 componentModel.get(RabbitMqProviderProperties.USERNAME),
                 componentModel.get(RabbitMqProviderProperties.PASSWORD),
+                Integer.parseInt(componentModel.get(RabbitMqProviderProperties.TIMEOUT)),
                 secret == null || secret.equals("") ? new DefaultEncryptionService() : new AesEncryptionService(secret)));
     }
 
@@ -34,6 +35,7 @@ public class RabbitMqUserStorageProviderFactory implements UserStorageProviderFa
                 .property(RabbitMqProviderProperties.USERNAME, "Username", "Username", ProviderConfigProperty.STRING_TYPE, "admin", null)
                 .property(RabbitMqProviderProperties.PASSWORD, "Password", "Password", ProviderConfigProperty.PASSWORD, "admin", null)
                 .property(RabbitMqProviderProperties.SECRET, "Secret", "Secret", ProviderConfigProperty.PASSWORD, "sOme*ShaREd*SecreT", null)
+                .property(RabbitMqProviderProperties.TIMEOUT, "Timeout", "Timeout in seconds", ProviderConfigProperty.STRING_TYPE, "10", null)
                 .build();
     }
 
