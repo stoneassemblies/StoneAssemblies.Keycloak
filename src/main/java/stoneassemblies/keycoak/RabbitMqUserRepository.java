@@ -11,6 +11,7 @@ import stoneassemblies.keycoak.interfaces.UserRepository;
 import stoneassemblies.keycoak.models.User;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +39,7 @@ public class RabbitMqUserRepository implements UserRepository {
 
     @Override
     public List<User> getAllUsers() {
-        return null;
+        return this.getUsers(0, this.getUsersCount());
     }
 
     @Override
