@@ -154,14 +154,28 @@ public class RabbitMqUserRepository implements UserRepository {
     }
 
     private User getUser(JSONObject userJsonObject) {
+        if (!userJsonObject.has("id") || !userJsonObject.has("username")) {
+            return null;
+        }
+
         User user = new User();
         user.setId(userJsonObject.getString("id"));
         user.setUsername(userJsonObject.getString("username"));
-        user.setFirstName(userJsonObject.getString("firstName"));
-        user.setLastName(userJsonObject.getString("lastName"));
-        user.setEmail(userJsonObject.getString("email"));
-        user.setEnabled(userJsonObject.getBoolean("enabled"));
+        user.setEnabled(userJsonObject.has("enabled") && userJsonObject.getBoolean("enabled"));
         user.setCreated(System.currentTimeMillis());
+
+        if (userJsonObject.has("firstName")) {
+            user.setFirstName(userJsonObject.getString("firstName"));
+        }
+
+        if (userJsonObject.has("lastName")) {
+            user.setLastName(userJsonObject.getString("lastName"));
+        }
+
+        if (userJsonObject.has("email")) {
+            user.setEmail(userJsonObject.getString("email"));
+        }
+
         return user;
     }
 
@@ -275,11 +289,14 @@ public class RabbitMqUserRepository implements UserRepository {
 
         JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
         JSONObject message = response.getJSONObject("message");
-        JSONArray users = message.getJSONArray("users");
 
         List<User> userList = new ArrayList<>();
+        JSONArray users = message.getJSONArray("users");
         for (int i = 0; i < users.length(); i++) {
-            userList.add(getUser(users.getJSONObject(i)));
+            User user = getUser(users.getJSONObject(i));
+            if (user != null) {
+                userList.add(user);
+            }
         }
 
         return userList;
