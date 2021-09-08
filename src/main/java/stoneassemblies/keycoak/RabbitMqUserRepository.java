@@ -287,7 +287,7 @@ public class RabbitMqUserRepository implements UserRepository {
 
     @Override
     public List<User> findUsers(String search) {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override
@@ -297,6 +297,6 @@ public class RabbitMqUserRepository implements UserRepository {
 
     @Override
     public List<User> findUsers(String search, int firstResult, int maxResults) {
-        return null;
+        return Collections.emptyList();
     }
 }

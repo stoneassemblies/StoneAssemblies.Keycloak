@@ -132,7 +132,124 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
     @Override
     public List<UserModel> getUsers(RealmModel realmModel) {
-        return Collections.emptyList();
+        logger.info("getUsers");
+        int usersCount = this.getUsersCount(realmModel);
+        return new List<UserModel>() {
+            @Override
+            public int size() {
+                return usersCount;
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return usersCount > 0;
+            }
+
+            @Override
+            public boolean contains(Object o) {
+                return false;
+            }
+
+            @Override
+            public Iterator<UserModel> iterator() {
+                return null;
+            }
+
+            @Override
+            public Object[] toArray() {
+                return new Object[0];
+            }
+
+            @Override
+            public <T> T[] toArray(T[] a) {
+                return null;
+            }
+
+            @Override
+            public boolean add(UserModel userModel) {
+                return false;
+            }
+
+            @Override
+            public boolean remove(Object o) {
+                return false;
+            }
+
+            @Override
+            public boolean containsAll(Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public boolean addAll(Collection<? extends UserModel> c) {
+                return false;
+            }
+
+            @Override
+            public boolean addAll(int index, Collection<? extends UserModel> c) {
+                return false;
+            }
+
+            @Override
+            public boolean removeAll(Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public boolean retainAll(Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public void clear() {
+
+            }
+
+            @Override
+            public UserModel get(int index) {
+                return null;
+            }
+
+            @Override
+            public UserModel set(int index, UserModel element) {
+                return null;
+            }
+
+            @Override
+            public void add(int index, UserModel element) {
+
+            }
+
+            @Override
+            public UserModel remove(int index) {
+                return null;
+            }
+
+            @Override
+            public int indexOf(Object o) {
+                return 0;
+            }
+
+            @Override
+            public int lastIndexOf(Object o) {
+                return 0;
+            }
+
+            @Override
+            public ListIterator<UserModel> listIterator() {
+                return null;
+            }
+
+            @Override
+            public ListIterator<UserModel> listIterator(int index) {
+                return null;
+            }
+
+            @Override
+            public List<UserModel> subList(int fromIndex, int toIndex) {
+                return null;
+            }
+        };
     }
 
     @Override
@@ -166,7 +283,7 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
     public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
         logger.info("searchForUser Map" );
 
-        return Collections.emptyList();
+        return this.getUsers(realm);
     }
 
     @Override
