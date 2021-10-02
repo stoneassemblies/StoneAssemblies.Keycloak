@@ -9,4 +9,5 @@ public class RabbitMqProviderProperties {
     public static final String PORT = "port";
     public static final String SECRET = "secret";
     public static final String TIMEOUT = "timeout";
+    public static final String VIRTUALHOST = "virtualhost";
 }

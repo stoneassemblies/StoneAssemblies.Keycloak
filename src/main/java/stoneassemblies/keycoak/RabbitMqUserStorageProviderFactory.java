@@ -21,6 +21,7 @@ public class RabbitMqUserStorageProviderFactory implements UserStorageProviderFa
         return new UserStorageProvider(keycloakSession, componentModel, new RabbitMqUserRepository(
                 componentModel.get(RabbitMqProviderProperties.HOST),
                 Integer.parseInt(componentModel.get(RabbitMqProviderProperties.PORT)),
+                componentModel.get(RabbitMqProviderProperties.VIRTUALHOST),
                 componentModel.get(RabbitMqProviderProperties.USERNAME),
                 componentModel.get(RabbitMqProviderProperties.PASSWORD),
                 Integer.parseInt(componentModel.get(RabbitMqProviderProperties.TIMEOUT)),
@@ -32,6 +33,7 @@ public class RabbitMqUserStorageProviderFactory implements UserStorageProviderFa
         return ProviderConfigurationBuilder.create()
                 .property(RabbitMqProviderProperties.HOST, "Host", "Host", ProviderConfigProperty.STRING_TYPE, "localhost", null)
                 .property(RabbitMqProviderProperties.PORT, "Port", "Port", ProviderConfigProperty.STRING_TYPE, "5672", null)
+                .property(RabbitMqProviderProperties.VIRTUALHOST, "Virtual Host", "Virtual Host", ProviderConfigProperty.STRING_TYPE, "/", null)
                 .property(RabbitMqProviderProperties.USERNAME, "Username", "Username", ProviderConfigProperty.STRING_TYPE, "admin", null)
                 .property(RabbitMqProviderProperties.PASSWORD, "Password", "Password", ProviderConfigProperty.PASSWORD, "admin", null)
                 .property(RabbitMqProviderProperties.SECRET, "Secret", "Secret", ProviderConfigProperty.PASSWORD, "sOme*ShaREd*SecreT", null)

@@ -22,15 +22,17 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class RabbitMqUserRepository implements UserRepository {
     private final String host;
+    private final String virtualHost;
     private final String username;
     private final String password;
     private final long timeout;
     private final EncryptionService encryptionService;
     private final int port;
 
-    public RabbitMqUserRepository(String host, int port, String username, String password, long timeout, stoneassemblies.keycoak.interfaces.EncryptionService encryptionService) {
+    public RabbitMqUserRepository(String host, int port, String virtualHost, String username, String password, long timeout, stoneassemblies.keycoak.interfaces.EncryptionService encryptionService) {
         this.host = host;
         this.port = port;
+        this.virtualHost = virtualHost;
         this.username = username;
         this.password = password;
         this.timeout = timeout;
@@ -66,8 +68,12 @@ public class RabbitMqUserRepository implements UserRepository {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(this.host);
         factory.setPort(this.port);
+        if (this.virtualHost != null && !this.virtualHost.isEmpty()) {
+            factory.setVirtualHost(this.virtualHost);
+        }
         factory.setUsername(this.username);
         factory.setPassword(this.password);
+
         AtomicReference<JSONObject> receivedMessage = new AtomicReference<>();
 
         try (Connection connection = factory.newConnection();
@@ -75,15 +81,15 @@ public class RabbitMqUserRepository implements UserRepository {
 
             channel.queueDeclare(queueName, true, false, false, null);
 
-             channel.exchangeDeclare(exchange0, BuiltinExchangeType.FANOUT, true);
-             channel.exchangeDeclare(exchange1, BuiltinExchangeType.FANOUT, true);
+            channel.exchangeDeclare(exchange0, BuiltinExchangeType.FANOUT, true);
+            channel.exchangeDeclare(exchange1, BuiltinExchangeType.FANOUT, true);
 
-             channel.queueBind(queueName, exchange0, "");
-             channel.queueBind(queueName, exchange1, "");
+            channel.queueBind(queueName, exchange0, "");
+            channel.queueBind(queueName, exchange1, "");
 
             final Object lock = new Object();
             channel.basicConsume(queueName, false, (consumerTag, message) -> {
-                synchronized (lock){
+                synchronized (lock) {
                     if (receivedMessage.get() == null) {
                         try {
                             String source = new String(message.getBody());
