@@ -19,8 +19,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Logger;
 
 public class RabbitMqUserRepository implements UserRepository {
+    private static Logger logger = Logger.getLogger(JdbcUserStorageProviderFactory.class.getName());
+
     private final String host;
     private final String virtualHost;
     private final String username;
@@ -153,10 +156,17 @@ public class RabbitMqUserRepository implements UserRepository {
                 "    ]\n" +
                 "}";
 
-        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-        JSONObject userJsonObject = response.getJSONObject("message").getJSONObject("user");
-        User user = getUser(userJsonObject);
-        return user;
+        try {
+            JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
+            JSONObject userJsonObject = response.getJSONObject("message").getJSONObject("user");
+            User user = getUser(userJsonObject);
+            return user;
+        } catch (Exception e) {
+            logger.warning(String.format("Error finding user by id '%s'", id));
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     private User getUser(JSONObject userJsonObject) {
@@ -202,11 +212,18 @@ public class RabbitMqUserRepository implements UserRepository {
                 "    ]\n" +
                 "}";
 
-        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-        JSONObject message = response.getJSONObject("message");
-        JSONObject userJsonObject = message.getJSONObject("user");
-        User user = getUser(userJsonObject);
-        return user;
+        try {
+            JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
+            JSONObject message = response.getJSONObject("message");
+            JSONObject userJsonObject = message.getJSONObject("user");
+            User user = getUser(userJsonObject);
+            return user;
+        } catch (Exception e) {
+            logger.warning(String.format("Error finding user by name '%s'", username));
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
     @Override
@@ -237,6 +254,7 @@ public class RabbitMqUserRepository implements UserRepository {
             }
 
         } catch (Exception e) {
+            logger.warning(String.format("Error validating credentials of user %s", username));
             e.printStackTrace();
         }
 
@@ -269,6 +287,7 @@ public class RabbitMqUserRepository implements UserRepository {
                 return message.getBoolean("succeeded");
             }
         } catch (Exception e) {
+            logger.warning(String.format("Error updating credentials of user %s", username));
             e.printStackTrace();
         }
 
@@ -293,19 +312,25 @@ public class RabbitMqUserRepository implements UserRepository {
                 "    ]\n" +
                 "}";
 
-        JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-        JSONObject message = response.getJSONObject("message");
-
-        List<User> userList = new ArrayList<>();
-        JSONArray users = message.getJSONArray("users");
-        for (int i = 0; i < users.length(); i++) {
-            User user = getUser(users.getJSONObject(i));
-            if (user != null) {
-                userList.add(user);
+        try {
+            JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
+            JSONObject message = response.getJSONObject("message");
+            List<User> userList = new ArrayList<>();
+            JSONArray users = message.getJSONArray("users");
+            for (int i = 0; i < users.length(); i++) {
+                User user = getUser(users.getJSONObject(i));
+                if (user != null) {
+                    userList.add(user);
+                }
             }
+
+            return userList;
+        } catch (Exception e) {
+            logger.warning(String.format("Error listing users %s", username));
+            e.printStackTrace();
         }
 
-        return userList;
+        return Collections.emptyList();
     }
 
     @Override
