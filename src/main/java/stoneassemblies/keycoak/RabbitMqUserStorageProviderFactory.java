@@ -46,3 +46,4 @@ public class RabbitMqUserStorageProviderFactory implements UserStorageProviderFa
         return "rabbitmq-user-provider";
     }
 }
+

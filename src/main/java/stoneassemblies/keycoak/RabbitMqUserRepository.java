@@ -18,6 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
@@ -67,32 +68,35 @@ public class RabbitMqUserRepository implements UserRepository {
         return response.getJSONObject("message").getInt("count");
     }
 
+    // private static final Object lock = new Object();
+    private static AtomicInteger number = new AtomicInteger();
+
+
     private JSONObject basicRequest(String queueName, String exchange0, String exchange1, UUID correlationId, String requestMessage) {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost(this.host);
-        factory.setPort(this.port);
-        if (this.virtualHost != null && !this.virtualHost.isEmpty()) {
-            factory.setVirtualHost(this.virtualHost);
-        }
-        factory.setUsername(this.username);
-        factory.setPassword(this.password);
+            ConnectionFactory factory = new ConnectionFactory();
+            factory.setHost(this.host);
+            factory.setPort(this.port);
+            if (this.virtualHost != null && !this.virtualHost.isEmpty()) {
+                factory.setVirtualHost(this.virtualHost);
+            }
+            factory.setUsername(this.username);
+            factory.setPassword(this.password);
 
-        AtomicReference<JSONObject> receivedMessage = new AtomicReference<>();
+            AtomicReference<JSONObject> receivedMessage = new AtomicReference<>();
+            try (Connection connection = factory.newConnection();
+                 Channel channel = connection.createChannel()) {
 
-        try (Connection connection = factory.newConnection();
-             Channel channel = connection.createChannel()) {
+                channel.queueDeclare(queueName, true, false, false, null);
 
-            channel.queueDeclare(queueName, true, false, false, null);
+                channel.exchangeDeclare(exchange0, BuiltinExchangeType.FANOUT, true);
+                channel.exchangeDeclare(exchange1, BuiltinExchangeType.FANOUT, true);
 
-            channel.exchangeDeclare(exchange0, BuiltinExchangeType.FANOUT, true);
-            channel.exchangeDeclare(exchange1, BuiltinExchangeType.FANOUT, true);
+                channel.queueBind(queueName, exchange0, "");
+                channel.queueBind(queueName, exchange1, "");
 
-            channel.queueBind(queueName, exchange0, "");
-            channel.queueBind(queueName, exchange1, "");
-
-            final Object lock = new Object();
-            channel.basicConsume(queueName, false, (consumerTag, message) -> {
-                synchronized (lock) {
+                // final Object lock = new Object();
+                String s = channel.basicConsume(queueName, false, (consumerTag, message) -> {
+                    // synchronized (lock) {
                     if (receivedMessage.get() == null) {
                         try {
                             String source = new String(message.getBody());
@@ -101,42 +105,48 @@ public class RabbitMqUserRepository implements UserRepository {
                             String requestMessageType = sendMessageJsonObject.getJSONArray("messageType").getString(0);
                             String responseMessageType = receivedMessageJsonObject.getJSONArray("messageType").getString(0);
                             UUID receivedCorrelationId = UUID.fromString(receivedMessageJsonObject.getJSONObject("message").getString("correlationId"));
+
+                            long deliveryTag = message.getEnvelope().getDeliveryTag();
                             if (!requestMessageType.equals(responseMessageType) && receivedCorrelationId.equals(correlationId)) {
-                                long deliveryTag = message.getEnvelope().getDeliveryTag();
+                                System.out.println("basicAck => " + correlationId + ":" + receivedCorrelationId + ":" + requestMessageType + ":" + responseMessageType);
                                 receivedMessage.set(receivedMessageJsonObject);
                                 channel.basicAck(deliveryTag, false);
+                            } else {
+                                System.out.println("basicNack");
+                                channel.basicNack(deliveryTag, false, true);
                             }
                         } catch (Exception ex) {
                             ex.printStackTrace();
                         }
                     }
-                }
-            }, consumerTag -> {
+                    //  }
+                }, consumerTag -> {
 
-            });
+                });
 
-            channel.basicPublish(exchange0, queueName, null, requestMessage.getBytes());
+                channel.basicPublish(exchange0, queueName, null, requestMessage.getBytes());
 
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            Future<Integer> submit = executor.submit(() -> {
-                while (receivedMessage.get() == null) {
-                    try {
-                        Thread.sleep(1);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<Integer> submit = executor.submit(() -> {
+                    while (receivedMessage.get() == null) {
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
 
-                return 0;
-            });
+                    // channel.basicCancel(s);
+                    return 0;
+                });
 
-            submit.get(this.timeout, TimeUnit.SECONDS);
-            executor.shutdown();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+                executor.shutdown();
+                submit.get(this.timeout, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
-        return receivedMessage.get();
+            return receivedMessage.get();
     }
 
     @Override
@@ -248,11 +258,12 @@ public class RabbitMqUserRepository implements UserRepository {
                     "}";
 
             JSONObject response = basicRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-            JSONObject message = response.getJSONObject("message");
-            if (message.has("succeeded")) {
-                return message.getBoolean("succeeded");
+            if(response != null && response.has("message")){
+                JSONObject message = response.getJSONObject("message");
+                if (message.has("succeeded")) {
+                    return message.getBoolean("succeeded");
+                }
             }
-
         } catch (Exception e) {
             logger.warning(String.format("Error validating credentials of user %s", username));
             e.printStackTrace();
