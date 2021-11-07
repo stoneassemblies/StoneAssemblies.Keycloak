@@ -17,57 +17,77 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RabbitMqClientDemo {
     @Test
     public void getUsersCount() {
         RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 10, new AesEncryptionService("sOme*ShaREd*SecreT"));
         int usersCount = rabbitMqUserRepository.getUsersCount();
+        Assert.assertNotEquals(0, usersCount);
     }
 
     @Test
     public void findUserById() {
         RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 10, new AesEncryptionService("sOme*ShaREd*SecreT"));
-        User userById = rabbitMqUserRepository.findUserById("123556");
+        User user = rabbitMqUserRepository.findUserByUsernameOrEmail("jane.doe0");
+        User userById = rabbitMqUserRepository.findUserById(user.getId());
+        Assert.assertNotNull(userById);
     }
 
     @Test
     public void findUserByUsernameOrEmail() {
         RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 10, new AesEncryptionService("sOme*ShaREd*SecreT"));
-        User userById = rabbitMqUserRepository.findUserByUsernameOrEmail("jane.doe0");
+        User user = rabbitMqUserRepository.findUserByUsernameOrEmail("jane.doe0");
+        Assert.assertNotNull(user);
     }
 
     @Test
     public void getUsers() {
         RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 10, new AesEncryptionService("sOme*ShaREd*SecreT"));
         List<User> users = rabbitMqUserRepository.getUsers(39, 20);
+        Assert.assertNotEquals(0, users.size());
+        for (User user : users) {
+            System.out.println(user.getUsername());
+        }
     }
 
     @Test
     public void sequentialValidateCredentials() {
         RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 10, new AesEncryptionService("sOme*ShaREd*SecreT"));
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 5; i++) {
             Assert.assertTrue(rabbitMqUserRepository.validateCredentials("jane.doe" + i, "Password123!"));
         }
     }
 
     @Test
     public void parallelValidateCredentials() {
-        RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 5, new AesEncryptionService("sOme*ShaREd*SecreT"));
+        long startTime = System.nanoTime();
+        RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 60, new AesEncryptionService("sOme*ShaREd*SecreT"));
         ExecutorService executorService = Executors.newCachedThreadPool();
-        for (int i = 0; i < 2; i++) {
+        AtomicInteger count = new AtomicInteger();
+        int expected = 30;
+        for (int i = 0; i < expected; i++) {
             int finalI = i;
             executorService.execute(() -> {
-                System.out.println(rabbitMqUserRepository.validateCredentials("jane.doe" + finalI, "Password123!"));
+                if(rabbitMqUserRepository.validateCredentials("jane.doe" + finalI, "Password123!")) {
+                    count.getAndIncrement();
+                }
             });
         }
 
         try {
             executorService.shutdown();
-            executorService.awaitTermination(15, TimeUnit.SECONDS);
+            executorService.awaitTermination(120, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime) / 1000000;
+        System.out.println(duration + "ms");
+
+        Assert.assertEquals(expected, count.get());
     }
 
     @Test
