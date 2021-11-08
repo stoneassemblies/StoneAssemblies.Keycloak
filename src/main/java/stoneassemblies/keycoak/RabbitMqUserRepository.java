@@ -79,8 +79,6 @@ public class RabbitMqUserRepository implements UserRepository {
         JSONObject response = null;
 
         String replyQueueName = queueName + "-reply";
-        JSONObject sendMessageJsonObject = new JSONObject(requestMessage);
-        String requestMessageType = sendMessageJsonObject.getJSONArray("messageType").getString(0);
         try (Connection connection = connectionFactory.newConnection();
                  Channel channel = connection.createChannel()) {
 
@@ -99,10 +97,9 @@ public class RabbitMqUserRepository implements UserRepository {
                         try {
                             String source = new String(message.getBody());
                             JSONObject receivedMessageJsonObject = new JSONObject(source);
-                            String responseMessageType = receivedMessageJsonObject.getJSONArray("messageType").getString(0);
                             UUID receivedCorrelationId = UUID.fromString(receivedMessageJsonObject.getJSONObject("message").getString("correlationId"));
                             long deliveryTag = message.getEnvelope().getDeliveryTag();
-                            if (!requestMessageType.equals(responseMessageType) && receivedCorrelationId.equals(correlationId)) {
+                            if (receivedCorrelationId.equals(correlationId)) {
                                 receivedMessage.set(receivedMessageJsonObject);
                                 channel.basicAck(deliveryTag, false);
                             } else {
