@@ -67,8 +67,12 @@ public class RabbitMqUserRepository implements UserRepository {
                 "    ]\n" +
                 "}";
 
+        int count = 0;
         JSONObject response = basicMassTransitRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-        return response.getJSONObject("message").getInt("count");
+        if(response != null && response.has("count")){
+            count = response.getInt("count");
+        }
+        return count;
     }
 
     private JSONObject basicMassTransitRequest(String queueName, String exchange0, String exchange1, UUID correlationId, String requestMessage) {
@@ -174,7 +178,7 @@ public class RabbitMqUserRepository implements UserRepository {
         User user = null;
         try {
             JSONObject response = basicMassTransitRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-            if(response.has("user")) {
+            if(response != null && response.has("user")) {
                 JSONObject userJsonObject = response.getJSONObject("user");
                 user = getUser(userJsonObject);
             }
@@ -232,7 +236,7 @@ public class RabbitMqUserRepository implements UserRepository {
         User user = null;
         try {
             JSONObject response = basicMassTransitRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-            if(response.has("user")){
+            if(response != null && response.has("user")){
                 JSONObject userJsonObject = response.getJSONObject("user");
                 user = getUser(userJsonObject);
             }
@@ -267,7 +271,7 @@ public class RabbitMqUserRepository implements UserRepository {
                     "}";
 
             JSONObject response = basicMassTransitRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-            if (response.has("succeeded")) {
+            if (response!= null && response.has("succeeded")) {
                 succeeded = response.getBoolean("succeeded");
             }
         } catch (Exception e) {
@@ -300,7 +304,7 @@ public class RabbitMqUserRepository implements UserRepository {
                     "}";
 
             JSONObject response = basicMassTransitRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-            if (response.has("succeeded")) {
+            if (response != null && response.has("succeeded")) {
                 succeeded = response.getBoolean("succeeded");
             }
         } catch (Exception e) {
@@ -332,7 +336,7 @@ public class RabbitMqUserRepository implements UserRepository {
         List<User> userList = new ArrayList<>();
         try {
             JSONObject response = basicMassTransitRequest(queueName, exchange0, exchange1, correlationId, requestMessage);
-            if(response.has("users")){
+            if(response != null && response.has("users")){
                 JSONArray users = response.getJSONArray("users");
                 for (int i = 0; i < users.length(); i++) {
                     User user = getUser(users.getJSONObject(i));
