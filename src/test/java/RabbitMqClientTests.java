@@ -1,26 +1,27 @@
-import com.rabbitmq.client.BuiltinExchangeType;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import stoneassemblies.keycoak.AesEncryptionService;
 import stoneassemblies.keycoak.RabbitMqUserRepository;
+import stoneassemblies.keycoak.RpcClientFactory;
+import stoneassemblies.keycoak.interfaces.RpcClient;
 import stoneassemblies.keycoak.models.User;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class RabbitMqClientTests {
+
+    @Test
+    public void same(){
+        RpcClient rpcClient1 = RpcClientFactory.create("localhost", 6002, "public", "queuedemo", "queuedemo", 10);
+        RpcClient rpcClient2 = RpcClientFactory.create("localhost", 6002, "public", "queuedemo", "queuedemo", 10);
+        Assert.assertEquals(rpcClient1, rpcClient2);
+        // RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 10, new AesEncryptionService("sOme*ShaREd*SecreT"));
+    }
 
     @Test
     @Ignore
@@ -61,10 +62,15 @@ public class RabbitMqClientTests {
     @Test
     @Ignore
     public void sequentialValidateCredentials() {
+        long startTime = System.nanoTime();
         RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 10, new AesEncryptionService("sOme*ShaREd*SecreT"));
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 30; i++) {
             Assert.assertTrue(rabbitMqUserRepository.validateCredentials("jane.doe" + i, "Password123!"));
         }
+
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime) / 1000000;
+        System.out.println(duration + "ms");
     }
 
     @Test
@@ -74,7 +80,7 @@ public class RabbitMqClientTests {
         RabbitMqUserRepository rabbitMqUserRepository = new RabbitMqUserRepository("localhost", 6002, "public", "queuedemo", "queuedemo", 60, new AesEncryptionService("sOme*ShaREd*SecreT"));
         ExecutorService executorService = Executors.newCachedThreadPool();
         AtomicInteger count = new AtomicInteger();
-        int expected = 100;
+        int expected = 30;
         for (int i = 0; i < expected; i++) {
             int finalI = i;
             executorService.execute(() -> {
