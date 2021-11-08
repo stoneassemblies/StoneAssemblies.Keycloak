@@ -1,5 +1,7 @@
 package stoneassemblies.keycoak;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import stoneassemblies.keycoak.interfaces.UserRepository;
 import stoneassemblies.keycoak.models.User;
 import org.keycloak.component.ComponentModel;
@@ -13,12 +15,18 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 
 public class UserStorageProvider implements org.keycloak.storage.UserStorageProvider,
         UserLookupProvider, UserQueryProvider, CredentialInputUpdater, CredentialInputValidator {
+
+    private final Cache<String, UserAdapterFederatedStorage> userAdapterFederatedStorageByEmailCache;
+
+    private final Cache<String, UserAdapterFederatedStorage> userAdapterFederatedStorageByIdCache;
 
     private Logger logger = Logger.getLogger(UserStorageProvider.class.getName());
 
@@ -29,11 +37,14 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
     private final UserRepository repository;
 
     public UserStorageProvider(KeycloakSession session, ComponentModel model, UserRepository repository) {
-        logger.info("Created UserStorageProvider");
+        logger.info("UserStorageProvider Created");
 
         this.session = session;
         this.model = model;
         this.repository = repository;
+
+        this.userAdapterFederatedStorageByEmailCache = CacheBuilder.newBuilder().maximumSize(20).expireAfterAccess(10, TimeUnit.SECONDS).build();
+        this.userAdapterFederatedStorageByIdCache = CacheBuilder.newBuilder().maximumSize(20).expireAfterAccess(10, TimeUnit.SECONDS).build();
     }
 
     @Override
@@ -93,39 +104,62 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
     @Override
     public UserModel getUserById(String id, RealmModel realm) {
-        logger.info("getUserById => " + id);
-
         String externalId = StorageId.externalId(id);
-        User userById = repository.findUserById(externalId);
-        if (userById != null) {
-            return new UserAdapterFederatedStorage(session, realm, model, userById);
+        logger.info(String.format("Finding userAdapterFederatedStorage by ID '%s'", externalId));
+
+        UserAdapterFederatedStorage userAdapterFederatedStorage = null;
+        try {
+            userAdapterFederatedStorage = userAdapterFederatedStorageByIdCache.get(id, () -> {
+                User userById = repository.findUserById(externalId);
+                if (userById != null) {
+                    return new UserAdapterFederatedStorage(session, realm, model, userById);
+                }
+
+                return null;
+            });
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
 
-        return null;
+        return userAdapterFederatedStorage;
     }
 
     @Override
     public UserModel getUserByUsername(String username, RealmModel realm) {
-        logger.info("getUserByUsername => " + username);
+        logger.info(String.format("Finding user by Username '%s'", username));
 
-        User userByUsernameOrEmail = repository.findUserByUsernameOrEmail(username);
-        if (userByUsernameOrEmail != null) {
-            return new UserAdapterFederatedStorage(session, realm, model, userByUsernameOrEmail);
+        UserAdapterFederatedStorage userAdapterFederatedStorage = null;
+
+        try {
+            userAdapterFederatedStorage = userAdapterFederatedStorageByEmailCache.get(username, () -> {
+                User userByUsernameOrEmail = repository.findUserByUsernameOrEmail(username);
+                if (userByUsernameOrEmail != null) {
+                    return new UserAdapterFederatedStorage(session, realm, model, userByUsernameOrEmail);
+                }
+
+                return null;
+            });
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
 
-        return null;
+        if (userAdapterFederatedStorage != null) {
+            userAdapterFederatedStorageByIdCache.put(userAdapterFederatedStorage.getId(), userAdapterFederatedStorage);
+        }
+
+        return userAdapterFederatedStorage;
     }
 
     @Override
     public UserModel getUserByEmail(String email, RealmModel realm) {
-        logger.info("getUserByEmail => " + email);
+        logger.info(String.format("Finding user by Email '%s'", email));
 
         return getUserByUsername(email, realm);
     }
 
     @Override
     public int getUsersCount(RealmModel realm) {
-        logger.info("getUsersCount");
+        logger.info("Counting users");
 
         return repository.getUsersCount();
     }
@@ -202,7 +236,6 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
             @Override
             public void clear() {
-
             }
 
             @Override
@@ -217,7 +250,6 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
             @Override
             public void add(int index, UserModel element) {
-
             }
 
             @Override
@@ -254,7 +286,7 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
     @Override
     public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        logger.info("getUsers => " + firstResult + "," + maxResults);
+        logger.info(String.format("Listing users offset '%d', take '%d'", firstResult, maxResults));
 
         return repository.getUsers(firstResult, maxResults).stream()
                 .map(user -> new UserAdapterFederatedStorage(session, realm, model, user))
@@ -263,7 +295,7 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm) {
-        logger.info("searchForUser => " + search);
+        logger.info(String.format("Searching users '%s'", search));
 
         return repository.findUsers(search).stream()
                 .map(user -> new UserAdapterFederatedStorage(session, realm, model, user))
@@ -272,7 +304,7 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
     @Override
     public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        logger.info("searchForUser => " + search + "," + firstResult + ", " + maxResults);
+        logger.info(String.format("Search For User  '%s', '%d', '%d'", search, firstResult, maxResults));
 
         return repository.findUsers(search, firstResult, maxResults).stream()
                 .map(user -> new UserAdapterFederatedStorage(session, realm, model, user))
@@ -281,14 +313,14 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
     @Override
     public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
-        logger.info("searchForUser Map" );
+        logger.info("SearchForUser Map" );
 
         return this.getUsers(realm);
     }
 
     @Override
     public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
-        logger.info("searchForUser Map => " + firstResult + ", " + maxResults);
+        logger.info(String.format("Search For User Map '%d', '%d'", firstResult, maxResults));
 
         return getUsers(realm, firstResult, maxResults);
     }
@@ -305,7 +337,7 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
     @Override
     public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
-        logger.info("searchForUserByUserAttribute =>" + attrValue);
+        logger.info(String.format("Search For User By User Attribute '%s'", attrValue));
 
         return Collections.emptyList();
     }
