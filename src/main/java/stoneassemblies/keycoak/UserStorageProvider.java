@@ -117,8 +117,8 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
                 return null;
             });
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            logger.warning(e.getMessage());
         }
 
         return userAdapterFederatedStorage;
@@ -139,8 +139,8 @@ public class UserStorageProvider implements org.keycloak.storage.UserStorageProv
 
                 return null;
             });
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            logger.warning(e.getMessage());
         }
 
         if (userAdapterFederatedStorage != null) {
