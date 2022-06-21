@@ -7,7 +7,7 @@ import stoneassemblies.keycoak.interfaces.RpcClient;
 import stoneassemblies.keycoak.interfaces.UserRepository;
 import stoneassemblies.keycoak.models.User;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
@@ -226,7 +226,19 @@ public class RabbitMqUserRepository implements UserRepository {
         if (userJsonObject.has("email")) {
             user.setEmail(userJsonObject.getString("email"));
         }
+        
+        String commaSeparatedRoles = null;
+        
+        if (userJsonObject.has("Roles")) {
+            commaSeparatedRoles = userJsonObject.getString("Roles");
+        }
 
+        if (commaSeparatedRoles != null) {
+            List<String> roles = Arrays.stream(commaSeparatedRoles.split(",")).map(s -> s.trim()).filter(s -> !s.equals("")).collect(Collectors.toList());
+            user.setRoles(roles);
+        } else {
+            user.setRoles(new ArrayList<>());
+        }
         return user;
     }
 }
